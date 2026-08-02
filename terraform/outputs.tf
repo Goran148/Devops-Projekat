@@ -4,7 +4,7 @@ output "public_ip" {
 }
 
 output "ssh_command" {
-  value       = "ssh -i ${var.ssh_key_name} ubuntu@${aws_instance.Projekat-web.public_ip}"
+  value       = "ssh -i ~/Downloads/${var.ssh_key_name} ubuntu@${aws_instance.Projekat-web.public_ip}"
   description = "Command to SSH into the web server instance"
 }
 
