@@ -1,42 +1,50 @@
-resource "aws_vpc" "default" {
+resource "aws_vpc" "projekat_vpc" {
   cidr_block = "10.0.0.0/16"
+
   tags = {
     Name = "Projekat-vpc"
   }
 }
 
-resource "aws_subnet" "default" {
-  vpc_id     = aws_vpc.default.id
+resource "aws_subnet" "projekat_subnet" {
+  vpc_id     = aws_vpc.projekat_vpc.id
   cidr_block = "10.0.1.0/24"
+
   tags = {
     Name = "Projekat-subnet"
   }
 }
 
-resource "aws_internet_gateway" "default" {
-  vpc_id = aws_vpc.default.id
+resource "aws_internet_gateway" "projekat_igw" {
+  vpc_id = aws_vpc.projekat_vpc.id
+
   tags = {
     Name = "Projekat-igw"
   }
 }
 
-resource "aws_route_table" "default" {
-  vpc_id = aws_vpc.default.id
+resource "aws_route_table" "projekat_route_table" {
+  vpc_id = aws_vpc.projekat_vpc.id
+
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.default.id
+    gateway_id = aws_internet_gateway.projekat_igw.id
+  }
+
+  tags = {
+    Name = "Projekat-route-table"
   }
 }
 
-resource "aws_route_table_association" "default" {
-  subnet_id      = aws_subnet.default.id
-  route_table_id = aws_route_table.default.id
+resource "aws_route_table_association" "projekat_route_table_association" {
+  subnet_id      = aws_subnet.projekat_subnet.id
+  route_table_id = aws_route_table.projekat_route_table.id
 }
 
-resource "aws_security_group" "default" {
+resource "aws_security_group" "projekat_sg" {
   name        = "Projekat-sg-${var.environment}"
   description = "Security group for Projekat"
-  vpc_id      = aws_vpc.default.id
+  vpc_id      = aws_vpc.projekat_vpc.id
 
   ingress {
     description = "Allow SSH"
@@ -82,20 +90,20 @@ data "aws_ami" "ubuntu" {
 
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
   }
 }
 
 resource "aws_instance" "Projekat-web" {
   ami                         = data.aws_ami.ubuntu.id
   instance_type               = var.instance_type
-  key_name                    = "moj-devops-kljuc"
-  subnet_id                   = aws_subnet.default.id
-  vpc_security_group_ids      = [aws_security_group.default.id]
+  key_name                    = var.ssh_key_name
+  subnet_id                   = aws_subnet.projekat_subnet.id
+  vpc_security_group_ids      = [aws_security_group.projekat_sg.id]
   associate_public_ip_address = true
 
   user_data = <<-EOF
-              #!/bin/bash
+                #!/bin/bash
                 apt-get update -y
                 apt-get install docker.io -y
                 systemctl start docker
