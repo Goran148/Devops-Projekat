@@ -3,7 +3,7 @@ name: Projekat Deployment
 on:
   push:
     branches:
-      - main
+      - Goran
 
 jobs:
     lint-and-test:
