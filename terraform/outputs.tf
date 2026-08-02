@@ -12,3 +12,8 @@ output "api_url" {
   value       = "http://${aws_instance.Projekat-web.public_ip}:5000"
   description = "URL to access the Python application"
 }
+
+output "eip" {
+  value       = aws_eip.projekat_eip.public_ip
+  description = "The Elastic IP address associated with the web server instance"
+}

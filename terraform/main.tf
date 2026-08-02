@@ -116,3 +116,13 @@ resource "aws_instance" "Projekat-web" {
     Environment = var.environment
   }
 }
+
+resource "aws_eip" "projekat_eip" {
+  instance = aws_instance.Projekat-web.id
+  domain   = "vpc"
+
+  tags = {
+    Name        = "Projekat-eip"
+    Environment = var.environment
+  }
+}

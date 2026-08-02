@@ -1,0 +1,64 @@
+name: Projekat Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+    lint-and-test:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
+
+            - name: Set up Python
+              uses: actions/setup-python@v4
+              with:
+                  python-version: '3.9'
+
+            - name: Install dependencies
+              run: |
+                  python -m pip install --upgrade pip
+                  pip install flake8 pytest
+                  if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+            - name: Lint code provera flake8
+              run: |
+                    flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+                    flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    build-and-push:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
+
+            - name: Log in to Docker Hub
+              uses: docker/login-action@v2
+              with:
+                  username: ${{ secrets.DOCKER_USERNAME }}
+                  password: ${{ secrets.DOCKER_PASSWORD }}
+
+            - name: Build and push Docker image
+              run: |
+                  docker build -t ${{ secrets.DOCKER_USERNAME }}/projekat-app:${{ github.sha }} .
+                  docker push ${{ secrets.DOCKER_USERNAME }}/projekat-app:${{ github.sha }}
+
+    deploy:
+        runs-on: ubuntu-latest
+        needs: build-and-push
+        steps:
+            - name: povezivanje sa SSH
+              uses: appleboy/ssh-action@v0.1.5
+              with:
+                  host: ${{ secrets.EC2_HOST }}
+                  username: ${{ secrets.EC2_USERNAME }}
+                  key: ${{ secrets.EC2_SSH_KEY }}
+                  script: |
+                      cd /home/ubuntu/projekat
+                      git pull origin main
+                      docker pull ${{ secrets.DOCKER_USERNAME }}/projekat-app:${{ github.sha }}
+                      docker stop projekat-app || true
+                      docker rm projekat-app || true
+                      docker run -d --name projekat-app -p 5000:5000 ${{ secrets.DOCKER_USERNAME }}/projekat-app:${{ github.sha }}
