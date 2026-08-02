@@ -1,7 +1,11 @@
 venv/
 .venv/
-__pycache__/
-.env
 env/
+__pycache__/
+*.pyc
+.env
+.terraform/
 *.tfstate
 *.tfstate.backup
+.terraform.lock.hcl
+.DS_Store
